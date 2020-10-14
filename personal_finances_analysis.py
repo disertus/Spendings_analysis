@@ -7,22 +7,26 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 
 
-# todo: cached function retrieving data from monobank's endpoint
+# todo: cache the function retrieving data from monobank's endpoint
 # todo: build a class for user differentiation
 # todo: connect a database for retrieved data collection
 # todo: build visualisations with plotly package
 # todo: add telebot notifications
 
+class User:
 
-@lru_cache(maxsize=128)     # cache the request result
-def retrieve_bank_data():
-    from_date = round((datetime.today() - timedelta(days=30)).timestamp())
-    response_currencies = requests.get('https://api.monobank.ua/bank/currency')
-    response_personal = requests.get('https://api.monobank.ua/personal/client-info',
-                                     headers={'X-Token': cfg.token})
-    response_statement = requests.get(f'https://api.monobank.ua/personal/statement/{cfg.account}/{from_date}',
-                                      headers={'X-Token': cfg.token})
-    return response_statement.json(), response_personal, response_currencies
+    def __init__(self, auth_token):
+        self.token = auth_token
+
+    @lru_cache(maxsize=128)     # cache the request result for repetitive usage
+    def retrieve_user_bank_data(self):
+        from_date = round((datetime.today() - timedelta(days=30)).timestamp())
+        response_currencies = requests.get('https://api.monobank.ua/bank/currency')
+        response_personal = requests.get('https://api.monobank.ua/personal/client-info',
+                                         headers={'X-Token': self.token})
+        response_statement = requests.get(f'https://api.monobank.ua/personal/statement/{cfg.account}/{from_date}',
+                                          headers={'X-Token': self.token})
+        return response_statement.json(), response_personal, response_currencies
 
 
 def json_to_dataframe(dataset):
@@ -45,12 +49,12 @@ def sum_by_source(dataset):
     return amount_sum_by_source['amount'].sort_values(ascending=False) / 100
 
 
-def sum_by_date(dataset):
+def spending_vs_balance_by_date(dataset):
     """Spending distribution by date"""
 
     dataset.update(dataset['time'].dt.round(freq='D'))
     amount_sum_by_date = dataset.groupby(['time']).sum()
-    return amount_sum_by_date['amount'] / 100
+    return type(amount_sum_by_date['amount'] / 100)
 
 
 def sum_by_hour(dataset):
@@ -68,9 +72,12 @@ def sum_by_user_and_date(dataset_u1, dataset_u2=None):
     pass
 
 
-print(sum_by_source(json_to_dataframe(retrieve_bank_data()[0])))
-print(f'\n{sum_by_date(json_to_dataframe(retrieve_bank_data()[0]))}')
-print(f'\n{sum_by_hour(json_to_dataframe(retrieve_bank_data()[0]))}')
+user1 = User(cfg.token)
+
+print(json_to_dataframe(user1.retrieve_user_bank_data()[0]))
+print(sum_by_source(json_to_dataframe(user1.retrieve_user_bank_data()[0])))
+print(f'\n{spending_vs_balance_by_date(json_to_dataframe(user1.retrieve_user_bank_data()[0]))}')
+print(f'\n{sum_by_hour(json_to_dataframe(user1.retrieve_user_bank_data()[0]))}')
 
 # currencies_dict = {'978': 'Euro',
 #                    '643': 'Ruble',
