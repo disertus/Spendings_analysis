@@ -63,8 +63,8 @@ def sum_by_hour(dataset):
 def sum_by_user_and_date(dataset_u1, dataset_u2=None):
     """Spending by user and date of transaction"""
 
-    dataset_u1.update(dataset['time'].dt.round(freq='D'))
-    dataset_u2.update(dataset['time'].dt.round(freq='D'))
+    dataset_u1.update(dataset_u1['time'].dt.round(freq='D'))
+    dataset_u2.update(dataset_u2['time'].dt.round(freq='D'))
     pass
 
 
