@@ -26,13 +26,13 @@ class UserData:
         self.balance = 'balance'
         self.cashback_amount = 'cashbackAmount'
 
+    @lru_cache(maxsize=64)  # cache the request result for repetitive usage
     def form_get_request(self):
         from_date = round((datetime.today() - timedelta(days=30)).timestamp())
         response_statement = requests.get(f'https://api.monobank.ua/personal/statement/{self.account}/{from_date}',
                                           headers={'X-Token': self.token})
         return response_statement
 
-    @lru_cache(maxsize=64)  # cache the request result for repetitive usage
     def send_get_request(self):
         try:
             request_result = self.form_get_request()
