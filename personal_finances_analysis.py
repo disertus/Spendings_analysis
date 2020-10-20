@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 
 
+# todo: add the possibility to join data of several users into a single dataset for analysis purposes
+# todo: add user identifiers for spending events
+# todo: add the possibility to create stacked charts with up to 6? distinct users' data
 # todo: connect a database for retrieved data collection
 # todo: build visualisations with plotly package
 # todo: add telebot notifications
@@ -24,7 +27,6 @@ class UserData:
         self.spending_amount = 'amount'
         self.spending_time = 'time'
         self.balance = 'balance'
-        self.cashback_amount = 'cashbackAmount'
 
     @lru_cache(maxsize=64)  # cache the request result for repetitive usage
     def form_get_request(self):
@@ -50,7 +52,6 @@ class UserData:
             df_dict[self.spending_amount].append(item[self.spending_amount])
             df_dict[self.spending_time].append(datetime.utcfromtimestamp(item[self.spending_time]))
             df_dict[self.balance].append(item[self.balance])
-            df_dict[self.cashback_amount].append(item[self.cashback_amount])
         return df_dict
 
     def dict_to_dataframe(self):
@@ -61,7 +62,7 @@ class UserData:
 
 class Analyzer:
 
-    def __init__(self, dataset):
+    def __init__(self, dataset: pd.DataFrame):
         self.dataset = dataset
 
     def sum_by_source(self):
@@ -104,14 +105,20 @@ class Visualizer:
 
 if __name__ == '__main__':
 
-    user1 = UserData(cfg.token, cfg.account)
-    analysis = Analyzer(user1.dict_to_dataframe())
-    viz = Visualizer(analysis.spending_vs_balance_by_date())
+    user1 = UserData(cfg.token1, cfg.account1)
+    user2 = UserData(cfg.token2, cfg.account2)
+    analysis1 = Analyzer(user1.dict_to_dataframe())
+    analysis2 = Analyzer(user2.dict_to_dataframe())
+    viz1 = Visualizer(analysis1.spending_vs_balance_by_date())
+    viz2 = Visualizer(analysis2.spending_vs_balance_by_date())
 
-    viz.show_bar_chart('Spendings')
+    #viz1.show_bar_chart('Spendings1')
+    #viz2.show_bar_chart('Spendings2')
 
     print(user1.dict_to_dataframe())
-    print(analysis.sum_by_source())
-    print(f'\n{analysis.spending_vs_balance_by_date()}')
-    print(f'\n{analysis.sum_by_hour()}')
+    print(analysis1.sum_by_source())
+    print(f'\n{analysis1.spending_vs_balance_by_date()}')
+    print(f'\n{analysis1.sum_by_hour()}')
 
+    user1.dict_to_dataframe().to_csv('user1_10_21.csv', index=False)
+    user2.dict_to_dataframe().to_csv('user2_10_21.csv', index=False)
